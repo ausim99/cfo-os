@@ -19,7 +19,11 @@ app.mount("/static", StaticFiles(directory=STATIC_DIR), name="static")
 @app.middleware("http")
 async def no_cache(request, call_next):
     response = await call_next(request)
-    if request.url.path == "/" or request.url.path.startswith("/static/"):
+    if request.url.path == "/":
+        # the HTML shell decides which JS/CSS to fetch -- never let a browser
+        # serve a stale copy of it independently of those assets' own cache state
+        response.headers["Cache-Control"] = "no-store"
+    elif request.url.path.startswith("/static/"):
         response.headers["Cache-Control"] = "no-cache"
     return response
 
