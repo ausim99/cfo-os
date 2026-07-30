@@ -44,6 +44,19 @@ cfo-os/
 Nothing about the KPI math, chart rendering, or robot logic changed -- `ltot`,
 `lder`, `LX`, `ov(*)`, the demo-module formulas, all ported byte-for-byte.
 
+## Quick install (Windows)
+
+Download and run `install.ps1` in an empty directory -- it clones the repo,
+creates a `.venv`, installs dependencies, and copies `.env.example` to `.env`:
+
+```powershell
+irm https://raw.githubusercontent.com/ausim99/cfo-os/master/install.ps1 | iex
+```
+
+(Or clone the repo first and run `.\install.ps1` from anywhere -- it detects
+an existing `cfo-os` folder and pulls instead of re-cloning.) Then fill in
+`.env` and start the server as below.
+
 ## Run it
 
 ```bash
