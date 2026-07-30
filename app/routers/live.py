@@ -68,31 +68,35 @@ def live_exact(
     from_: date = Query(..., alias="from"),
     to: date = Query(...),
     bu: int | None = Query(None),
+    pc: str | None = Query(None, description="Comma-separated profit center ids to filter to"),
 ):
     """Mirrors window.liveExact(): current-period, same-period-last-year, and
-    balance-as-of-`to` figures, optionally scoped to a single business unit."""
+    balance-as-of-`to` figures, optionally scoped to a single business unit
+    and/or a set of profit centers."""
     if to < from_:
         raise HTTPException(status_code=400, detail="to must be >= from")
     if bu is not None and bu not in BU_IDS:
         raise HTTPException(status_code=400, detail="unknown business unit id")
+    pc_ids = [int(x) for x in pc.split(",") if x.strip()] if pc else []
 
     py_from, py_to = from_ - timedelta(days=365), to - timedelta(days=365)
     bu_filter = " AND intBusinessUnitId=:bu" if bu is not None else ""
+    pc_filter = f" AND intProfitCenterId IN ({','.join(str(i) for i in pc_ids)})" if pc_ids else ""
     params = {"f": from_, "t": to, "pf": py_from, "pt": py_to}
     if bu is not None:
         params["bu"] = bu
 
     try:
         cur = run_query(
-            f"SELECT intBusinessUnitId bu,{PNL_COLS} {BASE}{bu_filter} AND dteTransactionDate>=:f AND dteTransactionDate<=:t GROUP BY intBusinessUnitId",
+            f"SELECT intBusinessUnitId bu,{PNL_COLS} {BASE}{bu_filter}{pc_filter} AND dteTransactionDate>=:f AND dteTransactionDate<=:t GROUP BY intBusinessUnitId",
             params,
         )
         py = run_query(
-            f"SELECT intBusinessUnitId bu,{PNL_COLS} {BASE}{bu_filter} AND dteTransactionDate>=:pf AND dteTransactionDate<=:pt GROUP BY intBusinessUnitId",
+            f"SELECT intBusinessUnitId bu,{PNL_COLS} {BASE}{bu_filter}{pc_filter} AND dteTransactionDate>=:pf AND dteTransactionDate<=:pt GROUP BY intBusinessUnitId",
             params,
         )
         end = run_query(
-            f"SELECT intBusinessUnitId bu,{BAL_COLS} {BASE}{bu_filter} AND dteTransactionDate<=:t GROUP BY intBusinessUnitId",
+            f"SELECT intBusinessUnitId bu,{BAL_COLS} {BASE}{bu_filter}{pc_filter} AND dteTransactionDate<=:t GROUP BY intBusinessUnitId",
             params,
         )
     except Exception as e:
@@ -111,8 +115,23 @@ def live_exact(
         end_m[str(int(r["bu"]))] = _rownum(r)
 
     return {
-        "key": f"{bu if bu is not None else 'all'}|{from_}|{to}",
+        "key": f"{bu if bu is not None else 'all'}|{from_}|{to}|{pc or ''}",
         "cur": cur_m,
         "py": py_m,
         "end": end_m,
     }
+
+
+@router.get("/api/live/profit-centers")
+def profit_centers(bu: str = Query(..., description="Comma-separated business unit ids")):
+    """Profit centers for the given business unit(s), to populate the Profit
+    Center filter -- cascades off the selected company/companies."""
+    bu_ids = [int(x) for x in bu.split(",") if x.strip()]
+    if not bu_ids or any(b not in BU_IDS for b in bu_ids):
+        raise HTTPException(status_code=400, detail="unknown business unit id")
+    rows = run_query(
+        "SELECT intProfitCenterId id, strProfitCenterName name, intBusinessUnitId bu"
+        " FROM cco.tblProfitCenterArc WHERE isActive=1 AND intBusinessUnitId IN"
+        f" ({','.join(str(b) for b in bu_ids)}) ORDER BY strProfitCenterName",
+    )
+    return [{"id": int(r["id"]), "name": r["name"], "bu": int(r["bu"])} for r in rows]

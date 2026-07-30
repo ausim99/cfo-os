@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <link rel="icon" type="image/svg+xml" href="/static/favicon.svg">
 <script src="/static/daily_data.js"></script>
-<title>CFO OS - AI-Powered CFO Operating System | Akij Group · iBOS ERP</title>
+<title>CFO OS - AI-Powered CFO Operating System | Akij Resource · iBOS ERP</title>
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.5.0/dist/chart.umd.js" integrity="sha384-iU8HYtnGQ8Cy4zl7gbNMOhsDTTKX02BTXptVP/vqAWIaTfM7isw76iyZCsjL2eVi" crossorigin="anonymous"></script>
 <script src="/static/echarts-shim.js"></script>
 <link rel="stylesheet" href="/static/styles.css">
@@ -15,7 +15,7 @@
   <aside id="sidebar">
     <div class="brand">
       <div class="logo">◈</div>
-      <div><h1>CFO OS</h1><p>Akij Group · iBOS ERP</p></div>
+      <div><h1>CFO OS</h1><p>Akij Resource · iBOS ERP</p></div>
     </div>
     <nav id="nav"></nav>
     <div class="sb-foot">
@@ -38,10 +38,13 @@
       </div>
     </div>
     <div id="filters">
-      <div class="flt"><label>Company / SBU</label><select id="f-co"></select></div>
+      <div class="flt co-picker"><label>Company / SBU</label><button type="button" class="tb-btn" id="f-co-btn"></button><div class="co-panel" id="f-co-panel"></div></div>
+      <div class="flt co-picker"><label>Profit Center</label><button type="button" class="tb-btn" id="f-pc-btn"></button><div class="co-panel" id="f-pc-panel"></div></div>
       <div class="flt"><label>Scenario</label><select id="f-scn"><option>Actual</option><option>Budget</option><option>Forecast</option><option>Previous Year</option></select></div>
+      <div class="flt"><label>Fiscal Year</label><select id="f-fy"></select></div>
       <div class="flt"><label>Date From</label><input type="date" id="f-from" min="2024-07-01"></div>
       <div class="flt"><label>Date To</label><input type="date" id="f-to" min="2024-07-01"></div>
+      <div class="flt"><label>&nbsp;</label><button class="tb-btn primary" id="btn-date-apply" title="Apply the selected date range">Apply</button></div>
       <div class="flt"><label>Currency</label><select id="f-cur"><option>BDT Cr</option><option>BDT full</option></select></div>
       <div class="flt-actions">
         <button class="tb-btn" id="btn-refresh" title="Refresh: re-randomize small daily deltas">⟳ Refresh</button>
