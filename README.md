@@ -86,6 +86,15 @@ devices on the same network, at `http://<this-machine's-LAN-IP>:8000`.
   showing embedded snapshot" badge just means the DB/Grok calls aren't
   configured yet, not that the app is broken.
 
+## Login
+
+Every page and API route requires a session -- login lives at `/`. Default
+account, created automatically on first run: **admin / admin123** (change
+this password via the admin panel after first login). Signed-in admins get
+an "Admin" link in the topbar (`/admin`) to add or remove user accounts.
+Users and password hashes live in `cfo-os/data/app.db` (SQLite, gitignored,
+not shipped in the repo).
+
 ## Run it as a background service (Windows, no terminal needed)
 
 Once installed (via install.ps1 or manually), run this **once** to make it
