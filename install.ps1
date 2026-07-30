@@ -33,8 +33,12 @@ Start-Process powershell -ArgumentList "-NoExit", "-Command", "& .\.venv\Scripts
 Start-Sleep -Seconds 3
 Start-Process "http://localhost:8000"
 
+$lanIp = & .\.venv\Scripts\python.exe -c "import socket; s=socket.socket(socket.AF_INET, socket.SOCK_DGRAM); s.connect(('8.8.8.8',80)); print(s.getsockname()[0]); s.close()"
+
 Pop-Location
 
 Write-Host ""
-Write-Host "Install + deploy complete. Server running at http://localhost:8000 in its own window."
+Write-Host "Install + deploy complete. Server running in its own window, bound to all interfaces."
+Write-Host "  This PC:            http://localhost:8000"
+Write-Host "  Phone / other device on same WiFi: http://${lanIp}:8000"
 Write-Host "Fill in $dir\.env with real MSSQL, GROK/GEMINI, and SMTP credentials for live data -- until then it runs on the embedded snapshot."

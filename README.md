@@ -44,18 +44,27 @@ cfo-os/
 Nothing about the KPI math, chart rendering, or robot logic changed -- `ltot`,
 `lder`, `LX`, `ov(*)`, the demo-module formulas, all ported byte-for-byte.
 
-## Quick install (Windows)
+## Quick install (Windows / macOS / Linux)
 
-Download and run `install.ps1` in an empty directory -- it clones the repo,
-creates a `.venv`, installs dependencies, and copies `.env.example` to `.env`:
+Run in an empty directory -- clones the repo, creates a `.venv`, installs
+dependencies, copies `.env.example` to `.env`, starts the server bound to
+`0.0.0.0:8000`, and opens it in your browser. Also prints your LAN IP so you
+can open the dashboard from a phone or another device on the same WiFi.
 
+Windows (PowerShell):
 ```powershell
 irm https://raw.githubusercontent.com/ausim99/cfo-os/master/install.ps1 | iex
 ```
 
-(Or clone the repo first and run `.\install.ps1` from anywhere -- it detects
-an existing `cfo-os` folder and pulls instead of re-cloning.) Then fill in
-`.env` and start the server as below.
+macOS / Linux:
+```bash
+curl -fsSL https://raw.githubusercontent.com/ausim99/cfo-os/master/install.sh | bash
+```
+
+(Or clone the repo first and run `.\install.ps1` / `./install.sh` from
+anywhere -- both detect an existing `cfo-os` folder and pull instead of
+re-cloning.) Fill in real credentials in `.env` afterward; until then it
+runs on the embedded snapshot.
 
 ## Run it
 
@@ -68,7 +77,8 @@ copy .env.example .env        # then fill in MSSQL_*, GROK_API_KEY, SMTP_*
 uvicorn app.main:app --reload --port 8000
 ```
 
-Open http://localhost:8000
+Open http://localhost:8000. Add `--host 0.0.0.0` to also reach it from other
+devices on the same network, at `http://<this-machine's-LAN-IP>:8000`.
 
 - `GET /api/health` -> `{"status":"ok"}`
 - If `.env` is left blank, the dashboard still loads and works against the
