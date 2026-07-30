@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link rel="icon" type="image/svg+xml" href="/static/favicon.svg">
+<script src="/static/daily_data.js"></script>
+<title>CFO OS - AI-Powered CFO Operating System | Akij Group · iBOS ERP</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.5.0/dist/chart.umd.js" integrity="sha384-iU8HYtnGQ8Cy4zl7gbNMOhsDTTKX02BTXptVP/vqAWIaTfM7isw76iyZCsjL2eVi" crossorigin="anonymous"></script>
+<script src="/static/echarts-shim.js"></script>
+<link rel="stylesheet" href="/static/styles.css">
+</head>
+<body>
+<div id="app">
+  <aside id="sidebar">
+    <div class="brand">
+      <div class="logo">◈</div>
+      <div><h1>CFO OS</h1><p>Akij Group · iBOS ERP</p></div>
+    </div>
+    <nav id="nav"></nav>
+    <div class="sb-foot">
+      <div><span class="dot g"></span><b>Data source: Live</b> · iBOS ERP (DWH)</div>
+      <div style="margin-top:3px" id="snap-note">Connecting...</div>
+    </div>
+  </aside>
+  <div id="main">
+    <div id="topbar">
+      <span id="burger" title="Toggle navigation">☰</span>
+      <span class="crumb"><b>CFO OS</b><span class="sep">/</span><span id="crumb-mod">CFO Executive Robot</span></span>
+      <span class="badge-demo" id="src-badge">LIVE DATA · iBOS ERP</span>
+      <span class="spacer"></span>
+      <button class="tb-btn" id="btn-share" title="Share this app">↗ Share</button>
+      <div class="themebar" id="theme-picker" title="Theme">
+        <button class="theme-dot" data-theme="light"    style="background:#00a9f4" title="McKinsey Blue"></button>
+        <button class="theme-dot" data-theme="mck-dark"  style="background:#0f2233" title="McKinsey Midnight"></button>
+        <button class="theme-dot" data-theme="mck-slate" style="background:#2c3e50" title="Executive Slate"></button>
+        <button class="theme-dot" data-theme="mck-teal"  style="background:#0b3d3a" title="Emerald"></button>
+      </div>
+    </div>
+    <div id="filters">
+      <div class="flt"><label>Company / SBU</label><select id="f-co"></select></div>
+      <div class="flt"><label>Scenario</label><select id="f-scn"><option>Actual</option><option>Budget</option><option>Forecast</option><option>Previous Year</option></select></div>
+      <div class="flt"><label>Date From</label><input type="date" id="f-from" min="2024-07-01"></div>
+      <div class="flt"><label>Date To</label><input type="date" id="f-to" min="2024-07-01"></div>
+      <div class="flt"><label>Currency</label><select id="f-cur"><option>BDT Cr</option><option>BDT full</option></select></div>
+      <div class="flt-actions">
+        <button class="tb-btn" id="btn-refresh" title="Refresh: re-randomize small daily deltas">⟳ Refresh</button>
+        <button class="tb-btn" id="btn-csv" title="Download the visible table as CSV">⬇ CSV</button>
+        <button class="tb-btn" id="btn-email" title="Email this report">✉ Email</button>
+        <button class="tb-btn" id="btn-print" title="Print">⎙ Print</button>
+      </div>
+    </div>
+    <div id="content"></div>
+  </div>
+</div>
+<script src="/static/app.js"></script>
+</body>
+</html>
