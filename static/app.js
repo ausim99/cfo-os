@@ -1413,6 +1413,9 @@ document.getElementById("burger").onclick=()=>{
   const sb=document.getElementById("sidebar");
   sb.classList.toggle(window.innerWidth<=920?"open":"collapsed");
 };
+document.getElementById("filter-toggle").onclick=()=>{
+  document.getElementById("filters").classList.toggle("open");
+};
 function applyTheme(t){
   document.documentElement.dataset.theme=t;
   document.querySelectorAll("#theme-picker .theme-dot").forEach(d=>d.classList.toggle("on",d.dataset.theme===t));
