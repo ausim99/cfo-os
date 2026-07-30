@@ -1521,7 +1521,7 @@ const eachDate=(f,t)=>{const a=[];let d=new Date(f+"T00:00:00Z");const e=new Dat
  while(d<=e){a.push(d.toISOString().slice(0,10));d.setUTCDate(d.getUTCDate()+1);}return a;};
 const dimN=ym=>{const[y,m]=ym.split("-").map(Number);return new Date(y,m,0).getDate();};
 
-const ZROW={rev:0,oth:0,cogs:0,sm:0,logi:0,admin:0,mfg:0,depr:0,fin:0,tax:0,dAR:0,dAP:0,dCash:0,dInv:0};
+const ZROW={rev:0,oth:0,cogs:0,sm:0,logi:0,admin:0,mfg:0,depr:0,fin:0,tax:0,salesTax:0,salesWastage:0,dAR:0,dAP:0,dCash:0,dInv:0};
 const busList=bu=>Array.isArray(bu)?bu:[bu];
 const sumRows=rows=>{const o={...ZROW};rows.forEach(r=>{for(const k in ZROW)o[k]+=r[k]||0;});o._gran=(rows[0]||{})._gran;return o;};
 const sumBal=list=>list.reduce((a,b)=>({ar:a.ar+b.ar,ap:a.ap+b.ap,cash:a.cash+b.cash,inv:a.inv+b.inv}),{ar:0,ap:0,cash:0,inv:0});
@@ -1554,8 +1554,14 @@ function ltot(bu,f,t){
 const lxKey=()=>"all|"+state.from+"|"+state.to+"|"+state.pcSel.join(",");
 const lgran=()=>{if(window.LIVEX&&LIVEX.key===lxKey())return"exact-date live query";
  return ltot(state.coSel,state.from,state.to)._gran||"monthly actuals";};
-function lder(t){const gp=t.rev-t.cogs,opex=t.sm+t.logi+t.admin+t.mfg,ebitda=gp+t.oth-opex,ebit=ebitda-t.depr,np=ebit-t.fin-t.tax;
- return {...t,gp,opex,ebitda,ebit,np,gmPct:t.rev?gp/t.rev*100:0,ebPct:t.rev?ebitda/t.rev*100:0,npPct:t.rev?np/t.rev*100:0};}
+function lder(t){
+ // netRev = Gross Revenue - Sales Tax (SD & VAT); gp/ebitda mirror the verified
+ // Income Statement chain in app/routers/ratios.py (mfg reduces gross profit,
+ // not opex; Sales (Wastage) is the "Other Operating Gain/Loss" add-back pre-EBITDA;
+ // oth here is Non-Operating Income [Capital Gain + Other Income], added pre-net-profit).
+ const netRev=t.rev-(t.salesTax||0),gp=netRev-t.cogs-t.mfg,opex=t.sm+t.logi+t.admin,
+  ebitda=gp-opex+(t.salesWastage||0),ebit=ebitda-t.depr,np=ebit-t.fin+(t.oth||0)-t.tax;
+ return {...t,netRev,gp,opex,ebitda,ebit,np,gmPct:netRev?gp/netRev*100:0,ebPct:netRev?ebitda/netRev*100:0,npPct:netRev?np/netRev*100:0};}
 function prevYmN(ym,n){let[y,m]=ym.split("-").map(Number);m-=n;while(m<1){m+=12;y--;}return y+"-"+String(m).padStart(2,"0");}
 function balAt(bu,ymd){const list=busList(bu);
  if(list.length>1)return sumBal(list.map(b=>balAt(b,ymd)));
@@ -1582,7 +1588,8 @@ function LX(){ // live context for the selected company/companies and exact day 
  const end=X?sumBal(bu.map(b=>X.end[b]||{ar:0,ap:0,cash:0,inv:0})):balAt(bu,t);
  const start=balAt(bu,prevYmN(f,1)),endP=balAt(bu,prevYmN(t,12));
  const days=Math.max(1,Math.round((new Date(t)-new Date(f))/864e5)+1);
- const dso=cur.rev>0?end.ar/(cur.rev/days):0,dpo=cur.cogs>0?end.ap/(cur.cogs/days):0,dio=cur.cogs>0?end.inv/(cur.cogs/days):0;
+ const cogsFull=cur.cogs+cur.mfg; // matches ratios.py's ratioCogs (COGS + Manufacturing Overhead)
+ const dso=cur.rev>0?end.ar/(cur.rev/days):0,dpo=cogsFull>0?end.ap/(cogsFull/days):0,dio=cogsFull>0?end.inv/(cogsFull/days):0;
  return {bu,f,t,ms,cur,py,end,start,endP,days,dso,dpo,dio,ccc:dso+dio-dpo};}
 // Backed by /api/live/* (falls back to the embedded ERP snapshot on failure).
 getRobotData=function(robotId,filters){const r=ROBOTS.find(x=>x.id===robotId);return {source:"Live (iBOS ERP snapshot "+LIVE_ASOF+")",data:r?r.slice(filters):null};};

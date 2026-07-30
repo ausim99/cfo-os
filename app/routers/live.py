@@ -102,7 +102,8 @@ def live_exact(
     except Exception as e:
         raise HTTPException(status_code=502, detail=f"live exact query failed: {e}")
 
-    zero = {"rev": 0, "oth": 0, "cogs": 0, "sm": 0, "logi": 0, "admin": 0, "mfg": 0, "depr": 0, "fin": 0, "tax": 0}
+    zero = {"rev": 0, "oth": 0, "cogs": 0, "sm": 0, "logi": 0, "admin": 0, "mfg": 0, "depr": 0, "fin": 0, "tax": 0,
+             "salesTax": 0, "salesWastage": 0}
     ids = [bu] if bu is not None else BU_IDS
     cur_m = {str(b): dict(zero) for b in ids}
     py_m = {str(b): dict(zero) for b in ids}

@@ -28,11 +28,13 @@ if (-not (Test-Path .env)) {
     Write-Host ".env already exists -- left untouched."
 }
 
+Write-Host "Starting server..."
+Start-Process powershell -ArgumentList "-NoExit", "-Command", "& .\.venv\Scripts\python.exe -m uvicorn app.main:app --host 0.0.0.0 --port 8000"
+Start-Sleep -Seconds 3
+Start-Process "http://localhost:8000"
+
 Pop-Location
 
 Write-Host ""
-Write-Host "Install complete. Next steps:"
-Write-Host "  1. Edit $dir\.env with your MSSQL, GROK/GEMINI, and SMTP credentials"
-Write-Host "  2. cd $dir"
-Write-Host "  3. .\.venv\Scripts\python.exe -m uvicorn app.main:app --host 0.0.0.0 --port 8001"
-Write-Host "  4. Open http://localhost:8001"
+Write-Host "Install + deploy complete. Server running at http://localhost:8000 in its own window."
+Write-Host "Fill in $dir\.env with real MSSQL, GROK/GEMINI, and SMTP credentials for live data -- until then it runs on the embedded snapshot."

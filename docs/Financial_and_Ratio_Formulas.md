@@ -16,6 +16,8 @@
 
 ---
 
+**Verified:** Net Revenue and Gross Margin formulas above match `app/routers/ratios.py:64-67` exactly.
+
 ## Ratio Formulas
 
 ### 1. Liquidity Analysis Ratios
@@ -75,4 +77,28 @@
 
 ---
 
-**Note:** Rows 4.03 and 4.07 were cut off in the source text. They have been completed here with the standard finance formulas (Total Debt + Total Equity, and Tangible Net Worth). Please confirm these match your intended definitions.
+**Note:** Rows 4.03 and 4.07 were cut off in the source text. They have been completed here with the standard finance formulas (Total Debt + Total Equity, and Tangible Net Worth).
+
+**Verified:** all 33 rows above (SL, Ratio Name, Std Ratio, Formula) confirmed against the original source screenshot, row by row -- exact match, including the 4.03/4.07 completions above.
+
+---
+
+## GL → Income Statement Mapping (reference)
+
+Confirmed from a source screenshot (partial -- only these rows were shown; more GL/BTN lines likely exist below the fold). Used to resolve which bucket each GL line feeds in the Financial Formulas above.
+
+| strBusinessTransactionName | strGeneralLedgerName | Income Statement Mapping |
+|---|---|---|
+| Sales (Wastage) | Sales (Wastage) | Operating Income |
+| Capital Gain | Capital Gain | Non Operating Income |
+| Royalty | Royalty | Non Operating Income |
+| Financial Income | Financial Income | Non Operating Income |
+| Other Income | Other Income | Non Operating Income |
+| Interest Received from Inter company | Interest Received from Inter company | Non Operating Income |
+| Inter Company Interest Income | Inter Company Interest Income | Non Operating Income |
+| Interest Income | Interest Income | Non Operating Income |
+| Loss/Gain on Asset Disposal or Sale | Loss/Gain on Asset Disposal or Sale | Non Operating Income |
+| Sales (Local) | Sales (Local) | Gross Revenue |
+| Sales (Foreign) | Sales (Foreign) | Gross Revenue |
+
+**Key correction this confirmed:** `Other Income` is Non Operating Income, not part of EBITDA's "Other Operating Gain/Loss" -- an earlier pass on `app/routers/ratios.py` had it backwards. Fixed: `other_operating_gain_loss` (feeds EBITDA) = Sales (Wastage) + Freight Income + Agency Income; `non_operating_income` (feeds EBT) = Capital Gain + Other Income. Freight Income and Agency Income aren't in this mapping table at all -- kept in the EBITDA bucket as the closest fit (operating-adjacent, not in the confirmed Non Operating Income list).

@@ -13,8 +13,8 @@ BU_IDS = [
 ]
 
 PNL_COLS = """
- -SUM(CASE WHEN strProfitType='Revenue' AND strGeneralLedgerName LIKE 'Sales%' THEN numAmount ELSE 0 END)/1e7 rev,
- -SUM(CASE WHEN strProfitType='Revenue' AND strGeneralLedgerName NOT LIKE 'Sales%' THEN numAmount ELSE 0 END)/1e7 oth,
+ -SUM(CASE WHEN strGeneralLedgerName IN ('Sales (Local)','Sales (Foreign)') THEN numAmount ELSE 0 END)/1e7 rev,
+ -SUM(CASE WHEN strGeneralLedgerName IN ('Capital Gain','Other Income') THEN numAmount ELSE 0 END)/1e7 oth,
  SUM(CASE WHEN strGeneralLedgerName='Cost Of Goods Sold' THEN numAmount ELSE 0 END)/1e7 cogs,
  SUM(CASE WHEN strGeneralLedgerName IN ('Selling Expenses','Marketing Expenses') THEN numAmount ELSE 0 END)/1e7 sm,
  SUM(CASE WHEN strGeneralLedgerName='Logistics Expenses' THEN numAmount ELSE 0 END)/1e7 logi,
@@ -22,7 +22,9 @@ PNL_COLS = """
  SUM(CASE WHEN strGeneralLedgerName='Manufacturing Expenses' THEN numAmount ELSE 0 END)/1e7 mfg,
  SUM(CASE WHEN strGeneralLedgerName LIKE 'Depreciation%' THEN numAmount ELSE 0 END)/1e7 depr,
  SUM(CASE WHEN strGeneralLedgerName='Financial Expenses' THEN numAmount ELSE 0 END)/1e7 fin,
- SUM(CASE WHEN strGeneralLedgerName LIKE 'Tax Expense%' OR strGeneralLedgerName LIKE 'Provision for Income Tax%' THEN numAmount ELSE 0 END)/1e7 tax"""
+ SUM(CASE WHEN strGeneralLedgerName LIKE 'Tax Expense%' OR strGeneralLedgerName LIKE 'Provision for Income Tax%' THEN numAmount ELSE 0 END)/1e7 tax,
+ SUM(CASE WHEN strGeneralLedgerName='Sales Tax (SD & VAT)' THEN numAmount ELSE 0 END)/1e7 salesTax,
+ -SUM(CASE WHEN strGeneralLedgerName='Sales (Wastage)' THEN numAmount ELSE 0 END)/1e7 salesWastage"""
 
 BAL_COLS = """
  SUM(CASE WHEN strGeneralLedgerName='Trade Receivable (Local)' THEN numAmount ELSE 0 END)/1e7 ar,
@@ -118,7 +120,7 @@ BS_BUCKET_NAMES = {
     "Advance Tax (AT)": "otherCA", "Advance to Employees (Expense)": "otherCA",
     "Advance to Employees (Salary)": "otherCA", "Advances & Deposits": "otherCA",
     "Advances Income Tax": "otherCA", "Advances Vat & SD": "otherCA",
-    "Deposit": "otherCA", "Prepaid Expense": "otherCA", "Material Loan Receivable": "otherCA",
+    "Deposit": "otherCA", "Prepaid Expense": "prepaid", "Material Loan Receivable": "otherCA",
     "Inter Company Balance": "otherCA", "Inter Company Interest Balance": "otherCA",
     "Preliminary Expense": "otherCA",
     "Land & Land Development": "fixedAssetGross", "Land & Land Development (CWIP)": "fixedAssetGross",
