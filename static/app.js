@@ -2030,6 +2030,9 @@ window.liveRefresh=async function(full){
 (function(){
 try{
  const coBtn=document.getElementById("f-co-btn"),coPanel=document.getElementById("f-co-panel");
+ const backdrop=document.getElementById("panel-backdrop");
+ function closeAllPanels(){coPanel.classList.remove("open");pcPanel.classList.remove("open");backdrop.classList.remove("show");}
+ backdrop.onclick=closeAllPanels;
  const AIL_ID=224,MSIL_ID=171; // Akij Ispat Ltd + Magnum Steel Industries Ltd -- reported together
  const mkRow=c=>'<label><input type="checkbox" value="'+c[0]+'" '+(state.coSel.includes(c[0])?"checked":"")+'> '+esc(c[1])+"</label>";
  const live=COMPANIES.filter(c=>c[2]),rest=COMPANIES.filter(c=>!c[2]);
@@ -2042,8 +2045,8 @@ try{
  }
  function updateCoBtn(){coBtn.textContent=(state.coSel.length>1?state.coSel.length+" companies selected":coName())+" \u25BE";}
  renderCoPanel(); updateCoBtn();
- coBtn.onclick=e=>{e.stopPropagation();coPanel.classList.toggle("open");};
- document.addEventListener("click",e=>{if(coPanel.classList.contains("open")&&!coPanel.contains(e.target)&&e.target!==coBtn)coPanel.classList.remove("open");});
+ coBtn.onclick=e=>{e.stopPropagation();const willOpen=!coPanel.classList.contains("open");closeAllPanels();if(willOpen){coPanel.classList.add("open");backdrop.classList.add("show");}};
+ document.addEventListener("click",e=>{if(coPanel.classList.contains("open")&&!coPanel.contains(e.target)&&e.target!==coBtn)closeAllPanels();});
  coPanel.addEventListener("change",e=>{
   if(e.target.type!=="checkbox")return;
   // checkbox values may be a single id ("4") or a merged preset ("224,171")
@@ -2068,8 +2071,8 @@ try{
   catch(e){ pcList=[]; console.warn("profit center list failed",e); }
   renderPcPanel(); updatePcBtn();
  }
- pcBtn.onclick=e=>{e.stopPropagation();pcPanel.classList.toggle("open");};
- document.addEventListener("click",e=>{if(pcPanel.classList.contains("open")&&!pcPanel.contains(e.target)&&e.target!==pcBtn)pcPanel.classList.remove("open");});
+ pcBtn.onclick=e=>{e.stopPropagation();const willOpen=!pcPanel.classList.contains("open");closeAllPanels();if(willOpen){pcPanel.classList.add("open");backdrop.classList.add("show");}};
+ document.addEventListener("click",e=>{if(pcPanel.classList.contains("open")&&!pcPanel.contains(e.target)&&e.target!==pcBtn)closeAllPanels();});
  pcPanel.addEventListener("change",e=>{
   if(e.target.type!=="checkbox")return;
   state.pcSel=Array.from(pcPanel.querySelectorAll("input:checked")).map(i=>+i.value);
