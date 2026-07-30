@@ -1943,6 +1943,7 @@ genInsights=async function(){
 window.LIVEX={key:null,cur:{},py:{},end:{}};
 async function apiGet(path){
  const res=await fetch(path);
+ if(res.status===401){location.href="/";throw new Error("session expired");}
  if(!res.ok)throw new Error((await res.json().catch(()=>({}))).detail||"request failed");
  return res.json();
 }
@@ -2106,3 +2107,11 @@ try{
 
 render();
 liveRefresh(true);
+
+fetch("/api/auth/me").then(r=>r.json()).then(me=>{
+ if(me.is_admin)document.getElementById("admin-link").style.display="";
+}).catch(()=>{});
+document.getElementById("btn-logout").onclick=async()=>{
+ await fetch("/api/auth/logout",{method:"POST"});
+ location.href="/";
+};
