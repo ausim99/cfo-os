@@ -86,6 +86,26 @@ devices on the same network, at `http://<this-machine's-LAN-IP>:8000`.
   showing embedded snapshot" badge just means the DB/Grok calls aren't
   configured yet, not that the app is broken.
 
+## Run it as a background service (Windows, no terminal needed)
+
+Once installed (via install.ps1 or manually), run this **once** to make it
+start automatically at every login with no console window, no VS Code, no
+manual `uvicorn` command ever again:
+
+```powershell
+cd cfo-os
+.\install-service.ps1
+```
+
+This registers a Scheduled Task ("CFO OS Server") that runs `service_runner.py`
+via `pythonw.exe` (windowless) at logon, and starts it immediately. Logs go to
+`cfo-os\service.log` since a windowless process has no console to print to.
+
+To stop it and remove the auto-start behavior:
+```powershell
+.\uninstall-service.ps1
+```
+
 ### MSSQL driver
 
 `pyodbc` needs the **Microsoft ODBC Driver 17 (or 18) for SQL Server**
