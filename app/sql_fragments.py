@@ -13,14 +13,14 @@ BU_IDS = [
 ]
 
 PNL_COLS = """
- -SUM(CASE WHEN strGeneralLedgerName IN ('Sales (Local)','Sales (Foreign)') THEN numAmount ELSE 0 END)/1e7 rev,
- -SUM(CASE WHEN strGeneralLedgerName IN ('Capital Gain','Other Income') THEN numAmount ELSE 0 END)/1e7 oth,
+ -SUM(CASE WHEN strGeneralLedgerName IN ('Sales (Local)','Sales (Foreign)','Freight Income','Agency Income') THEN numAmount ELSE 0 END)/1e7 rev,
+ -SUM(CASE WHEN strGeneralLedgerName IN ('Capital Gain','Other Income','Royalty') THEN numAmount ELSE 0 END)/1e7 oth,
  SUM(CASE WHEN strGeneralLedgerName='Cost Of Goods Sold' THEN numAmount ELSE 0 END)/1e7 cogs,
  SUM(CASE WHEN strGeneralLedgerName IN ('Selling Expenses','Marketing Expenses') THEN numAmount ELSE 0 END)/1e7 sm,
  SUM(CASE WHEN strGeneralLedgerName='Logistics Expenses' THEN numAmount ELSE 0 END)/1e7 logi,
- SUM(CASE WHEN strGeneralLedgerName IN ('Administrative Expenses','Operating Expenses') THEN numAmount ELSE 0 END)/1e7 admin,
- SUM(CASE WHEN strGeneralLedgerName='Manufacturing Expenses' THEN numAmount ELSE 0 END)/1e7 mfg,
- SUM(CASE WHEN strGeneralLedgerName LIKE 'Depreciation%' THEN numAmount ELSE 0 END)/1e7 depr,
+ SUM(CASE WHEN strGeneralLedgerName='Administrative Expenses' THEN numAmount ELSE 0 END)/1e7 admin,
+ SUM(CASE WHEN strGeneralLedgerName IN ('Manufacturing Expenses','Operating Expenses') THEN numAmount ELSE 0 END)/1e7 mfg,
+ SUM(CASE WHEN strGeneralLedgerName LIKE 'Depreciation%' OR strGeneralLedgerName='Amortization on Intangible Asset' THEN numAmount ELSE 0 END)/1e7 depr,
  SUM(CASE WHEN strGeneralLedgerName='Financial Expenses' THEN numAmount ELSE 0 END)/1e7 fin,
  SUM(CASE WHEN strGeneralLedgerName LIKE 'Tax Expense%' OR strGeneralLedgerName LIKE 'Provision for Income Tax%' THEN numAmount ELSE 0 END)/1e7 tax,
  SUM(CASE WHEN strGeneralLedgerName='Sales Tax (SD & VAT)' THEN numAmount ELSE 0 END)/1e7 salesTax,
@@ -162,13 +162,18 @@ BS_BUCKET_CASE = f"CASE LTRIM(RTRIM(strGeneralLedgerName)) {_BS_CASE_WHEN} ELSE 
 
 RATIO_PNL_NAMES = {
     "Sales (Local)": "salesLocal", "Sales (Foreign)": "salesForeign", "Sales (Wastage)": "salesWastage",
-    "Sales Tax (SD & VAT)": "salesTax", "Cost Of Goods Sold": "cogs", "Manufacturing Expenses": "mfg",
-    "Administrative Expenses": "admin", "Operating Expenses": "admin",
+    "Sales Tax (SD & VAT)": "salesTax", "Cost Of Goods Sold": "cogs",
+    "Manufacturing Expenses": "mfg", "Operating Expenses": "mfg",
+    "Administrative Expenses": "admin",
     "Marketing Expenses": "marketing", "Selling Expenses": "selling", "Logistics Expenses": "logistics",
     "Depreciation on Property Plant & Equipment": "depr", "Depreciation on Leased Asset": "depr",
     "Amortization on Intangible Asset": "depr", "Financial Expenses": "financial", "Tax Expenses": "tax",
-    "Other Income": "otherIncome", "Capital Gain": "capitalGain",
-    "Freight Income": "freightIncome", "Agency Income": "agencyIncome",
+    "Other Income": "otherIncome", "Capital Gain": "capitalGain", "Royalty": "royalty",
+    # Per fin.tblFinancialStatementComponentConfig (strType='Income Statement', intBusinessUnitId=0),
+    # Freight Income and Agency Income map to FSComponentId 1 "Gross Sales Revenue" -- same
+    # component as Sales (Local)/(Foreign) -- not a separate operating-gain line. Material for
+    # freight-forwarding BUs (e.g. BU 17 Akij Shipping Line: ~456 Cr/yr Freight Income, ~0 Sales).
+    "Freight Income": "salesLocal", "Agency Income": "salesLocal",
 }
 _RATIO_PNL_CASE_WHEN = " ".join(f"WHEN '{k}' THEN '{v}'" for k, v in RATIO_PNL_NAMES.items())
 RATIO_PNL_CASE = f"CASE LTRIM(RTRIM(strGeneralLedgerName)) {_RATIO_PNL_CASE_WHEN} ELSE 'other' END"

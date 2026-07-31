@@ -72,30 +72,28 @@ def _pl_period(bu: int, f: date, t: date) -> dict:
         {"bu": bu, "f": f, "t": t},
     )
     keys = ("salesLocal", "salesForeign", "salesWastage", "salesTax", "cogs", "mfg", "admin", "marketing",
-            "selling", "logistics", "depr", "financial", "tax", "otherIncome", "capitalGain",
-            "freightIncome", "agencyIncome")
+            "selling", "logistics", "depr", "financial", "tax", "otherIncome", "capitalGain", "royalty")
     v = _bucket_sums(rows, keys)
+    # Gross Sales Revenue per fin.tblFinancialStatementComponentConfig (FSComponentId 1) =
+    # Sales (Local) + Sales (Foreign) + Freight Income + Agency Income -- the latter two are
+    # folded into the salesLocal bucket in RATIO_PNL_NAMES (see sql_fragments.py), material for
+    # freight-forwarding BUs (e.g. BU 17 Akij Shipping Line) that have ~0 Sales but real Freight
+    # Income.
     gross_revenue = -(v["salesLocal"] + v["salesForeign"])
     sales_tax = v["salesTax"]
     net_revenue = gross_revenue - sales_tax
     gross_margin = net_revenue - v["cogs"] - v["mfg"]
     other_opex = v["admin"] + v["marketing"] + v["selling"] + v["logistics"]
-    # Other Operating Gain/Loss = "Operating Income" (Sales (Wastage), doc row 14) plus
-    # Freight/Agency Income -- confirmed via the GL->Income Statement Mapping reference that
-    # Other Income is NOT operating (it's explicitly mapped to Non Operating Income below),
-    # while Sales (Wastage) is explicitly mapped to Operating Income.
-    other_operating_gain_loss = -(v["salesWastage"] + v["freightIncome"] + v["agencyIncome"])
+    # Other Operating Gain/Loss = Sales (Wastage) only -- confirmed via
+    # fin.tblFinancialStatementComponentConfig (FSComponentId 5).
+    other_operating_gain_loss = -v["salesWastage"]
     ebitda = gross_margin - other_opex + other_operating_gain_loss
     depr_amort = v["depr"]
     ebit = ebitda - depr_amort
     financial_exp = v["financial"]
-    # Non Operating Income per the doc = Capital Gain + Royalty + Financial Income + Other
-    # Income + Interest Received from Inter Company + Inter Company Interest Income +
-    # Interest Income + Loss/Gain on Asset Disposal. Per the GL->Income Statement Mapping
-    # reference, Capital Gain and Other Income both map explicitly to Non Operating Income;
-    # Royalty/Financial Income/Interest Income/Inter Company Interest Income/Loss-Gain on
-    # Asset Disposal have no distinct GL line in the chart of accounts.
-    non_operating_income = -(v["capitalGain"] + v["otherIncome"])
+    # Non Operating Income per fin.tblFinancialStatementComponentConfig (FSComponentId 8) =
+    # Capital Gain + Other Income + Royalty.
+    non_operating_income = -(v["capitalGain"] + v["otherIncome"] + v["royalty"])
     ebt = ebit - financial_exp + non_operating_income
     tax_exp = v["tax"]
     net_income = ebt - tax_exp
