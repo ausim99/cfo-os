@@ -39,7 +39,7 @@ DELTA_BAL_COLS = """
  SUM(CASE WHEN strGeneralLedgerName IN ('Finished Goods in Stock','Raw Materials','Work in Progress-Materials','Semi Finished Goods','Trading Goods') THEN numAmount ELSE 0 END)/1e7 dInv"""
 
 _BU_IN = ",".join(str(b) for b in BU_IDS)
-BASE = f"FROM fin.tblAccountingJournalArc WHERE isActive=1 AND intBusinessUnitId IN ({_BU_IN})"
+BASE = f"FROM fin.tblAccountingJournal WHERE isActive=1 AND intBusinessUnitId IN ({_BU_IN})"
 
 # ---------------------------------------------------------------------------
 # FP&A sub-modules (Yield, Channel/Geo, Production & Inventory, GL Variance).

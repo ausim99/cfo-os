@@ -30,7 +30,7 @@ def _fy_start(d: date) -> date:
 def _bs_snapshot(bu: int, as_of: date) -> dict:
     rows = run_query(
         f"""SELECT {BS_BUCKET_CASE} bucket, SUM(numAmount) amt
-         FROM fin.tblAccountingJournalArc
+         FROM fin.tblAccountingJournal
          WHERE isActive=1 AND intBusinessUnitId=:bu AND dteTransactionDate<=:asof
          GROUP BY {BS_BUCKET_CASE}""",
         {"bu": bu, "asof": as_of},
@@ -66,7 +66,7 @@ def _bs_snapshot(bu: int, as_of: date) -> dict:
 def _pl_period(bu: int, f: date, t: date) -> dict:
     rows = run_query(
         f"""SELECT {RATIO_PNL_CASE} bucket, SUM(numAmount) amt
-         FROM fin.tblAccountingJournalArc
+         FROM fin.tblAccountingJournal
          WHERE isActive=1 AND intBusinessUnitId=:bu AND dteTransactionDate BETWEEN :f AND :t
          GROUP BY {RATIO_PNL_CASE}""",
         {"bu": bu, "f": f, "t": t},

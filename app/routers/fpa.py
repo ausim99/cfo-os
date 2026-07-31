@@ -24,7 +24,7 @@ def fpa_yield(co: int = Query(...), from_: date = Query(..., alias="from"), to: 
     py_from, py_to = from_ - timedelta(days=365), to - timedelta(days=365)
 
     sql = """SELECT r.intItemId item_id, r.strItemName name, SUM(r.numOrderQuantity) qty, SUM(r.numNetValue) val
-     FROM oms.tblSalesOrderRowArc r JOIN oms.tblSalesOrderHeaderArc h ON h.intSalesOrderId=r.intSalesOrderId
+     FROM oms.tblSalesOrderRow r JOIN oms.tblSalesOrderHeader h ON h.intSalesOrderId=r.intSalesOrderId
      WHERE h.intBusinessUnitId=:bu AND h.dteSalesOrderDate BETWEEN :f AND :t AND ISNULL(r.isFreeItem,0)=0
      GROUP BY r.intItemId, r.strItemName"""
     try:
@@ -85,15 +85,15 @@ def fpa_channel_geo(co: int = Query(...), from_: date = Query(..., alias="from")
     try:
         channel = run_query(
             f"""SELECT {CHANNEL_BUCKET} bucket, SUM(r.numNetValue) val
-             FROM oms.tblSalesOrderRowArc r JOIN oms.tblSalesOrderHeaderArc h ON h.intSalesOrderId=r.intSalesOrderId
+             FROM oms.tblSalesOrderRow r JOIN oms.tblSalesOrderHeader h ON h.intSalesOrderId=r.intSalesOrderId
              WHERE h.intBusinessUnitId=:bu AND h.dteSalesOrderDate BETWEEN :f AND :t
              GROUP BY {CHANNEL_BUCKET}""",
             params,
         )
         geo = run_query(
             f"""SELECT {GEO_BUCKET} bucket, SUM(r.numNetValue) val
-             FROM oms.tblSalesOrderRowArc r JOIN oms.tblSalesOrderHeaderArc h ON h.intSalesOrderId=r.intSalesOrderId
-             LEFT JOIN rtm.tblTerritoryInfoArc t ON t.intTerritoryId=h.intTerritoryId
+             FROM oms.tblSalesOrderRow r JOIN oms.tblSalesOrderHeader h ON h.intSalesOrderId=r.intSalesOrderId
+             LEFT JOIN rtm.tblTerritoryInfo t ON t.intTerritoryId=h.intTerritoryId
              WHERE h.intBusinessUnitId=:bu AND h.dteSalesOrderDate BETWEEN :f AND :t
              GROUP BY {GEO_BUCKET}""",
             params,
@@ -119,20 +119,20 @@ def fpa_prod_inventory(co: int = Query(...), from_: date = Query(..., alias="fro
         oee = run_query(
             """SELECT SUM(numShiftTargetQuantity) target, SUM(numActualOutputQuantity) actual,
              SUM(numGoodOutputQuantity) good, SUM(numAvailableMinute) avail_min, SUM(numLoadingMinute) load_min
-             FROM mes.tblOeeProdWasteHeaderArc
+             FROM mes.tblOeeProdWasteHeader
              WHERE intBusinessUnitId=:bu AND isActive=1 AND dteProductionDate BETWEEN :f AND :t""",
             params,
         )
         orders = run_query(
             """SELECT SUM(CASE WHEN isClose=1 THEN 1 ELSE 0 END) closed_ct, SUM(CASE WHEN isClose=0 OR isClose IS NULL THEN 1 ELSE 0 END) open_ct
-             FROM mes.tblProductionOrderArc
+             FROM mes.tblProductionOrder
              WHERE intBusinessUnitId=:bu AND isActive=1 AND dteStartDate<=:t AND (dteEndDate IS NULL OR dteEndDate>=:f)""",
             params,
         )
         abc = run_query(
             """SELECT ISNULL(NULLIF(w.strABC,''),'Unclassified') abc, SUM(w.numCurrentStock*ISNULL(i.numAverageRate,0))/1e7 value
-             FROM wms.tblItemPlantWarehouseArc w
-             LEFT JOIN itm.tblItemArc i ON i.intItemId=w.intItemId AND i.intBusinesUnitId=w.intBusinessUnitId
+             FROM wms.tblItemPlantWarehouse w
+             LEFT JOIN itm.tblItem i ON i.intItemId=w.intItemId AND i.intBusinesUnitId=w.intBusinessUnitId
              WHERE w.intBusinessUnitId=:bu AND w.isActive=1 AND w.numCurrentStock>0
              GROUP BY ISNULL(NULLIF(w.strABC,''),'Unclassified')""",
             {"bu": co},
@@ -144,8 +144,8 @@ def fpa_prod_inventory(co: int = Query(...), from_: date = Query(..., alias="fro
                   WHEN DATEDIFF(day,i.dteLastReceiptDate,GETDATE())<=90 THEN '61-90'
                   ELSE '90+' END bucket,
              SUM(w.numCurrentStock*ISNULL(i.numAverageRate,0))/1e7 value
-             FROM wms.tblItemPlantWarehouseArc w
-             JOIN itm.tblItemArc i ON i.intItemId=w.intItemId AND i.intBusinesUnitId=w.intBusinessUnitId
+             FROM wms.tblItemPlantWarehouse w
+             JOIN itm.tblItem i ON i.intItemId=w.intItemId AND i.intBusinesUnitId=w.intBusinessUnitId
              WHERE w.intBusinessUnitId=:bu AND w.isActive=1 AND w.numCurrentStock>0 AND i.dteLastReceiptDate IS NOT NULL
              GROUP BY CASE WHEN DATEDIFF(day,i.dteLastReceiptDate,GETDATE())<=30 THEN '0-30'
                   WHEN DATEDIFF(day,i.dteLastReceiptDate,GETDATE())<=60 THEN '31-60'
@@ -208,7 +208,7 @@ def fpa_gl_variance(co: int = Query(...), from_: date = Query(..., alias="from")
         actual_rows = run_query(
             f"""SELECT {GLVAR_DEPT_CASE} dept, intGeneralLedgerId glid, intSubGLId subglid, strSubGLName subgl,
              SUM(numAmount)/1e7 act
-             FROM fin.tblAccountingJournalArc
+             FROM fin.tblAccountingJournal
              WHERE isActive=1 AND intBusinessUnitId=:bu AND strGeneralLedgerName IN ({_GLVAR_GL_IN})
              AND dteTransactionDate BETWEEN :f AND :t
              GROUP BY {GLVAR_DEPT_CASE}, intGeneralLedgerId, intSubGLId, strSubGLName""",
@@ -216,7 +216,7 @@ def fpa_gl_variance(co: int = Query(...), from_: date = Query(..., alias="from")
         )
         budget_rows = run_query(
             f"""SELECT intGeneralLedgerId glid, intSubGlId subglid, SUM(numAmount)/1e7 bud
-             FROM bgt.tblBudgetIncomeExpenseRowArc
+             FROM bgt.tblBudgetIncomeExpenseRow
              WHERE intBusinessUnitId=:bu AND isActive=1 AND ISNULL(isForecast,0)=0 AND ({ym_clause})
              GROUP BY intGeneralLedgerId, intSubGlId""",
             {"bu": co},

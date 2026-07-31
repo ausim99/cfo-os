@@ -132,7 +132,7 @@ def profit_centers(bu: str = Query(..., description="Comma-separated business un
         raise HTTPException(status_code=400, detail="unknown business unit id")
     rows = run_query(
         "SELECT intProfitCenterId id, strProfitCenterName name, intBusinessUnitId bu"
-        " FROM cco.tblProfitCenterArc WHERE isActive=1 AND intBusinessUnitId IN"
+        " FROM cco.tblProfitCenter WHERE isActive=1 AND intBusinessUnitId IN"
         f" ({','.join(str(b) for b in bu_ids)}) ORDER BY strProfitCenterName",
     )
     return [{"id": int(r["id"]), "name": r["name"], "bu": int(r["bu"])} for r in rows]
