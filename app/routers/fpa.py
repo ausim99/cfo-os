@@ -162,6 +162,7 @@ def fpa_prod_inventory(co: int = Query(...), from_: date = Query(..., alias="fro
     availability = load_min / avail_min * 100 if avail_min else 0.0
     performance = actual / target * 100 if target else 0.0  # proxy: no standard ideal-cycle-time feed available
     quality = good / actual * 100 if actual else 0.0
+    scrap_rate = (actual - good) / actual * 100 if actual else 0.0
     ord_row = orders[0] if orders else {}
 
     by_abc = {}
@@ -172,7 +173,7 @@ def fpa_prod_inventory(co: int = Query(...), from_: date = Query(..., alias="fro
     return {
         "production": {
             "availability": availability, "performance": performance, "quality": quality,
-            "oee": availability * performance * quality / 10000,
+            "oee": availability * performance * quality / 10000, "scrapRate": scrap_rate,
             "openOrders": int(ord_row.get("open_ct") or 0), "closedOrders": int(ord_row.get("closed_ct") or 0),
         },
         "inventory": {
@@ -180,6 +181,45 @@ def fpa_prod_inventory(co: int = Query(...), from_: date = Query(..., alias="fro
             "ageing": [{"bucket": r["bucket"], "value": float(r["value"] or 0)} for r in ageing],
             "total": sum(by_abc.values()),
         },
+    }
+
+
+@router.get("/api/fpa/workforce")
+def fpa_workforce(co: int = Query(...), from_: date = Query(..., alias="from"), to: date = Query(...)):
+    """Headcount and payroll snapshot from HCM. hcm.tblMonthlySalaryGenerate (the
+    actual monthly payroll run history) is empty in this DWH copy -- no month-by-month
+    trend is available -- so payroll cost is a current run-rate from active employees'
+    numGrossSalary on tblEmployeeBasicInfo, not a historical actual."""
+    _bu(co)
+    if to < from_:
+        raise HTTPException(status_code=400, detail="to must be >= from")
+    try:
+        headcount_row = run_query(
+            """SELECT COUNT(*) n, SUM(ISNULL(numGrossSalary,0)) gross
+             FROM hcm.tblEmployeeBasicInfo WHERE intBusinessunitId=:bu AND isActive=1""",
+            {"bu": co},
+        )
+        separations = run_query(
+            """SELECT COUNT(*) n FROM hcm.tblEmployeeBasicInfo
+             WHERE intBusinessunitId=:bu AND dteSeparationDate BETWEEN :f AND :t""",
+            {"bu": co, "f": from_, "t": to},
+        )
+    except Exception as e:
+        raise HTTPException(status_code=502, detail=f"workforce query failed: {e}")
+
+    h = headcount_row[0] if headcount_row else {}
+    headcount = int(h.get("n") or 0)
+    gross_monthly = float(h.get("gross") or 0)
+    seps = int(separations[0]["n"]) if separations else 0
+    avg_headcount = headcount + seps / 2  # rough: heads who left already excluded from the active count above
+    turnover_pct = seps / avg_headcount * 100 if avg_headcount else 0.0
+
+    return {
+        "headcount": headcount,
+        "payrollCostMonthlyCr": gross_monthly / 1e7,
+        "costPerFte": gross_monthly / headcount if headcount else 0.0,
+        "separationsInRange": seps,
+        "turnoverPct": turnover_pct,
     }
 
 

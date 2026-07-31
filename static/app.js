@@ -923,57 +923,62 @@ const PAGES=[
    {k:"status",label:"Status",render:v=>statusDotHTML(v==="Complete"?"GREEN":v==="DELAYED"?"RED":"AMBER").replace(/GREEN|RED|AMBER/,v)},
    {k:"roi",label:"ROI %",num:true},{k:"npv",label:"NPV",num:true},{k:"irr",label:"IRR %",num:true},{k:"payback",label:"Payback (y)",num:true,d:1},{k:"note",label:"Note"}],rows:CAPEX.projects})},
 
-{id:"payroll",icon:"◉",
- slice:()=>({payroll:PAYROLL}),
- kpis(c){ return [
-   kpi("Headcount",fmt(c.v(423,{p:405})),"FTE","+4 vs Nov","GREEN"),
-   kpi("Payroll Cost Dec",c.m(c.v(892)),c.unit,"Gross salaries","GREEN"),
-   kpi("Payroll FY Total",c.m(c.v(13329,{b:13020})),c.unit,"+2.4% vs budget","AMBER"),
-   kpi("Cost per FTE",fmt(3350*EUR_BDT),"BDT/mo","Fully loaded","GREEN"),
-   kpi("Company Turnover",pct1(7.8),"","Logistics 12.0% highest","AMBER"),
-   kpi("Revenue per FTE",c.m(Math.round(44850/423)),c.unit+"/yr","Productivity","GREEN")];},
- blocks(c){ const P=PAL();
-  const COST_M=[850,852,858,860,865,870,872,868,875,880,885,892], BUD_M=[845,847,850,850,852,855,855,857,858,860,862,865];
+{id:"payroll",icon:"◉",live:true,singleCoOnly:true,
+ slice:()=>LIVE_WORKFORCE||{},
+ kpis(){ const w=LIVE_WORKFORCE||{}, X=window.LIVEX, revCr=(X&&X.cur&&X.cur[String(state.co)]&&X.cur[String(state.co)].rev)||0;
+  const revPerFte=w.headcount?revCr*1e7/w.headcount:0;
   return [
-   {title:"Headcount by Department",span:12,chart:barOpt(PAYROLL.depts.map(d=>d.name).reverse(),[
-     {name:"Headcount",data:PAYROLL.depts.map(d=>d.hc).reverse(),color:P.brand}],{horiz:true})},
-   {title:"Turnover % by Department",span:6,chart:barOpt(PAYROLL.depts.map(d=>d.name).reverse(),[
-     {name:"Turnover %",data:PAYROLL.depts.map(d=>d.to).reverse(),cellColor:v=>v>=10?P.neg:v>=8?P.warn:P.pos}],{horiz:true})},
-   {title:"Payroll Cost Trend (monthly)",span:6,chart:lineOpt(MONTHS,[
-     {name:"Cost",data:COST_M.map(x=>Math.round(c.v(x))),color:P.brand},{name:"Budget",data:BUD_M,color:P.pos}])}];},
- table:()=>({title:"Department Summary (aggregated only, no personal data)",cols:[
-   {k:"name",label:"Department"},{k:"hc",label:"Headcount",num:true},{k:"to",label:"Turnover %",num:true,d:1},
-   {k:"flag",label:"Flag",render:(v,r)=>r.to>=10?`<span class="neg">Retention risk</span>`:r.to>=8?`<span class="warn-ink">Watch</span>`:`<span class="pos">OK</span>`}],
-   rows:PAYROLL.depts.map(d=>({...d}))})},
+   kpi("Headcount",fmt(w.headcount||0),"active FTE","hcm.tblEmployeeBasicInfo","GREEN"),
+   kpi("Payroll Cost",lm(w.payrollCostMonthlyCr||0),lunit()+"/mo","Current run-rate (active employees)","GREEN"),
+   kpi("Cost per FTE",fmt(Math.round(w.costPerFte||0)),"BDT/mo","Gross salary basis","GREEN"),
+   kpi("Revenue per FTE",fmt(Math.round(revPerFte)),"BDT","For the selected date range, not annualized","GREEN"),
+   kpi("Separations",fmt(w.separationsInRange||0),"in range","dteSeparationDate","GREEN"),
+   kpi("Turnover",pct1(w.turnoverPct||0),"","Separations / avg headcount","GREEN")];},
+ blocks(){ const P=PAL(),w=LIVE_WORKFORCE||{};
+  return [
+   {title:"Headcount vs Payroll Cost",span:12,chart:barOpt(["Active Headcount"],[
+     {name:"Headcount",data:[w.headcount||0],color:P.brand}],{horiz:true})}];},
+ table:()=>{ const w=LIVE_WORKFORCE||{};
+  return {title:"Workforce Summary (live, hcm.tblEmployeeBasicInfo -- aggregated only, no personal data)",cols:[
+   {k:"metric",label:"Metric"},{k:"value",label:"Value"},{k:"note",label:"Note"}],
+   rows:[
+    {metric:"Active Headcount",value:fmt(w.headcount||0),note:"isActive=1"},
+    {metric:"Payroll Cost",value:lm(w.payrollCostMonthlyCr||0)+" "+lunit()+"/mo",note:"Current run-rate, not a historical actual -- hcm.tblMonthlySalaryGenerate (the monthly payroll run history) has no data in this DWH copy"},
+    {metric:"Cost per FTE",value:fmt(Math.round(w.costPerFte||0))+" BDT/mo",note:"Gross salary basis"},
+    {metric:"Separations in range",value:fmt(w.separationsInRange||0),note:"dteSeparationDate within selected date range"},
+    {metric:"Turnover %",value:pct1(w.turnoverPct||0),note:"Separations / avg headcount for the range"},
+   ]};}},
 
-{id:"mfg",icon:"▣",
- slice:()=>({ops:OPS}),
- kpis(c){ return [
-   kpi("OEE",pct1(c.v(84.2,{b:85,p:83.1})),"","Target 85%","AMBER"),
-   kpi("Availability",pct1(92.5),"","OEE component","AMBER"),
-   kpi("Performance",pct1(94.8),"","OEE component","GREEN"),
-   kpi("Quality",pct1(96.1),"","OEE component","GREEN"),
-   kpi("Scrap Rate",pct1(1.8),"","Limit 2.0%","GREEN"),
-   kpi("PPM Defects",fmt(125),"ppm","Limit 150","GREEN"),
-   kpi("Capacity Utilization",pct1(87.5),"","Band 80-90, near ceiling","AMBER"),
-   kpi("MTBF",fmt(485),"hours","Target 450","GREEN")];},
- blocks(c){ const P=PAL(); return [
-   {title:"OEE Gauge (A x P x Q)",span:4,chart:gaugeOpt(c.v(84.2,{b:85,p:83.1}),100,"target 85%",P.warn)},
+{id:"mfg",icon:"▣",live:true,singleCoOnly:true,
+ slice:()=>LIVE_PRODINV||{production:{}},
+ kpis(){ const p=(LIVE_PRODINV||{}).production||{};
+  const oeeStatus=v=>v>=85?"GREEN":v>=70?"AMBER":"RED";
+  return [
+   kpi("OEE",pct1(p.oee||0),"","Availability x Performance x Quality",oeeStatus(p.oee||0)),
+   kpi("Availability",pct1(p.availability||0),"","Run time / planned time","GREEN"),
+   kpi("Performance",pct1(p.performance||0),"","Output / shift target (proxy)","AMBER"),
+   kpi("Quality",pct1(p.quality||0),"","Good / actual output","GREEN"),
+   kpi("Scrap Rate",pct1(p.scrapRate||0),"","(Actual - Good) / Actual output","GREEN"),
+   kpi("Open Production Orders",String(p.openOrders||0),"","In progress","GREEN"),
+   kpi("Closed Production Orders",String(p.closedOrders||0),"","Completed in range","GREEN")];},
+ blocks(){ const P=PAL(),p=(LIVE_PRODINV||{}).production||{}; return [
+   {title:"OEE Gauge (A x P x Q)",span:4,chart:gaugeOpt(Math.round(p.oee||0),100,"live OEE %",P.warn)},
    {title:"OEE Components (%)",span:8,chart:barOpt(["Availability","Performance","Quality"],[
-     {name:"Actual",data:[92.5,94.8,96.1],cellColor:v=>v>=95?P.pos:v>=92?P.warn:P.neg}],{ref:95,refLabel:"Benchmark 95"})},
-   {title:"OEE Trend vs Target",span:6,chart:lineOpt(MONTHS,[
-     {name:"OEE",data:OEE_M,color:P.brand},{name:"Target",data:MONTHS.map(_=>85),color:P.pos}])},
-   {title:"PPM Trend vs Limit",span:6,chart:lineOpt(MONTHS,[
-     {name:"PPM",data:PPM_M,color:P.pos},{name:"Limit",data:MONTHS.map(_=>150),color:P.neg}])}];},
- table:()=>({title:"Production KPI Detail",cols:[
-   {k:"kpi",label:"KPI"},{k:"actual",label:"Actual"},{k:"target",label:"Target / Limit"},
+     {name:"Actual",data:[p.availability||0,p.performance||0,p.quality||0].map(v=>Math.round(v*10)/10),
+      cellColor:v=>v>=95?P.pos:v>=92?P.warn:P.neg}],{ref:95,refLabel:"Benchmark 95"})}];},
+ table:()=>{ const p=(LIVE_PRODINV||{}).production||{};
+  return {title:"Production KPI Detail (live, mes.tblOeeProdWasteHeader)",cols:[
+   {k:"kpi",label:"KPI"},{k:"actual",label:"Actual"},{k:"target",label:"Target"},
    {k:"status",label:"Status",render:statusDotHTML},{k:"note",label:"Note"}],
-   rows:[{kpi:"OEE",actual:"84.2%",target:">= 85%",status:"AMBER",note:"L1 micro-stoppages on tool changes"},
-    {kpi:"Scrap",actual:"1.8%",target:"<= 2.0%",status:"GREEN",note:"Stable"},
-    {kpi:"PPM",actual:"125",target:"<= 150",status:"GREEN",note:"Improving trend"},
-    {kpi:"MTBF",actual:"485 h",target:">= 450 h",status:"GREEN",note:"Preventive maintenance paying off"},
-    {kpi:"Capacity",actual:"87.5%",target:"80-90%",status:"AMBER",note:"Near ceiling, L3 press needed"},
-    {kpi:"Safety",actual:"0 LTI",target:"0",status:"GREEN",note:"245 days incident-free"}]})},
+   rows:[
+    {kpi:"OEE",actual:pct1(p.oee||0),target:">= 85%",status:(p.oee||0)>=85?"GREEN":(p.oee||0)>=70?"AMBER":"RED",note:"Availability x Performance x Quality"},
+    {kpi:"Availability",actual:pct1(p.availability||0),target:"n/a",status:"GREEN",note:"Run time / planned available time"},
+    {kpi:"Performance",actual:pct1(p.performance||0),target:"n/a",status:"AMBER",note:"Proxy: actual output / shift target (no ideal-cycle-time feed)"},
+    {kpi:"Quality",actual:pct1(p.quality||0),target:"n/a",status:"GREEN",note:"Good output / actual output"},
+    {kpi:"Scrap Rate",actual:pct1(p.scrapRate||0),target:"n/a",status:"GREEN",note:"(Actual - Good) / Actual output"},
+    {kpi:"Open Production Orders",actual:String(p.openOrders||0),target:"n/a",status:"GREEN",note:"mes.tblProductionOrder, isClose=0"},
+    {kpi:"Closed Production Orders",actual:String(p.closedOrders||0),target:"n/a",status:"GREEN",note:"mes.tblProductionOrder, isClose=1"},
+   ]};}},
 
 {id:"opskpi",icon:"◧",
  slice:()=>({kpi8:KPI8,ops:OPS,otd:96.8,safety:{lti:0,days:245}}),
@@ -1970,7 +1975,7 @@ async function liveExact(){
 }
 
 /* ---------- FP&A sub-modules: Yield, Channel/Geo, Production & Inventory, GL Variance ---------- */
-let LIVE_YIELD=null, LIVE_CHGEO=null, LIVE_PRODINV=null, LIVE_GLVAR=null, LIVE_COMP=null, LIVE_RATIOS=null;
+let LIVE_YIELD=null, LIVE_CHGEO=null, LIVE_PRODINV=null, LIVE_GLVAR=null, LIVE_COMP=null, LIVE_RATIOS=null, LIVE_WORKFORCE=null;
 async function fetchYield(){
  const q=new URLSearchParams({co:state.co,from:state.from,to:state.to});
  const j=await apiGet("/api/fpa/yield?"+q), cr=v=>(v||0)/1e7;
@@ -1994,6 +1999,10 @@ async function fetchGLVariance(){
 async function fetchRatios(){
  const q=new URLSearchParams({co:state.co,from:state.from,to:state.to});
  LIVE_RATIOS=await apiGet("/api/fpa/ratios?"+q);
+}
+async function fetchWorkforce(){
+ const q=new URLSearchParams({co:state.co,from:state.from,to:state.to});
+ LIVE_WORKFORCE=await apiGet("/api/fpa/workforce?"+q);
 }
 async function fetchCompetitor(){
  const co=COMPANIES.find(c=>c[0]===state.co);
@@ -2024,8 +2033,8 @@ window.liveRefresh=async function(full){
   if(sn)sn.textContent="Backend/DB unreachable · showing embedded snapshot";
   console.warn("live refresh failed",e);
  }
- const fpaResults=await Promise.allSettled([fetchYield(),fetchChannelGeo(),fetchProdInventory(),fetchGLVariance(),fetchRatios()]);
- fpaResults.forEach((r,i)=>{if(r.status==="rejected")console.warn("FP&A sub-module fetch failed",["yield","channel-geo","prod-inventory","gl-variance","ratios"][i],r.reason);});
+ const fpaResults=await Promise.allSettled([fetchYield(),fetchChannelGeo(),fetchProdInventory(),fetchGLVariance(),fetchRatios(),fetchWorkforce()]);
+ fpaResults.forEach((r,i)=>{if(r.status==="rejected")console.warn("FP&A sub-module fetch failed",["yield","channel-geo","prod-inventory","gl-variance","ratios","workforce"][i],r.reason);});
  _liveBusy=false;
  state.insCache={};
  render();
