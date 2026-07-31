@@ -7,7 +7,10 @@ from ..sql_fragments import BAL_COLS, BASE, BU_IDS, DELTA_BAL_COLS, PNL_COLS
 
 router = APIRouter()
 
-_CUTOVER = "2024-07-01"  # first month of the embedded snapshot / live window
+def _cutover() -> date:
+    """Rolling trailing-12-months window, computed at request time -- always
+    exactly one year of live data, never an ever-growing full-history scan."""
+    return date.today() - timedelta(days=365)
 
 
 def _rownum(r: dict) -> dict:
@@ -21,13 +24,15 @@ def _rownum(r: dict) -> dict:
 def live_monthly():
     """Mirrors window.liveMonthly() in the original HTML: monthly P&L + balance
     movements per business unit, opening balances, and top AR/AP counterparties."""
+    cutover = _cutover()
+    today = date.today()
     try:
         pl = run_query(
             f"""SELECT intBusinessUnitId bu,YEAR(dteTransactionDate) y,MONTH(dteTransactionDate) m,{PNL_COLS},
              {DELTA_BAL_COLS}
-             {BASE} AND dteTransactionDate>=:cutover
+             {BASE} AND dteTransactionDate>=:cutover AND dteTransactionDate<=:today
              GROUP BY intBusinessUnitId,YEAR(dteTransactionDate),MONTH(dteTransactionDate)""",
-            {"cutover": _CUTOVER},
+            {"cutover": cutover, "today": today},
         )
         if not pl:
             raise HTTPException(status_code=502, detail="no monthly rows returned")
@@ -35,7 +40,7 @@ def live_monthly():
         openb = run_query(
             f"""SELECT intBusinessUnitId bu,{BAL_COLS}
              {BASE} AND dteTransactionDate<:cutover GROUP BY intBusinessUnitId""",
-            {"cutover": _CUTOVER},
+            {"cutover": cutover},
         )
 
         ar_top = run_query(
