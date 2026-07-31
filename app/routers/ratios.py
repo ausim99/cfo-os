@@ -12,6 +12,19 @@ _ASSET_BUCKETS = ("cash", "ar", "inv", "otherCA", "prepaid", "fixedAssetGross", 
 # Liability/equity buckets: raw numAmount is negative: negate for a positive display figure.
 _CREDIT_BUCKETS = ("curLiabOther", "debtST", "nonCurLiabOther", "debtLT", "equity")
 
+# GLs iBOS flags isDrCrBoth=1 -- the NET position (not each transaction) decides which
+# side of the balance sheet they land on, confirmed against fin.sprBalanceSheet's
+# debit/credit-split logic (its "Bank Overdraft"/"Advance to Suppliers" relabeling).
+# Maps each such GL name to the asset bucket it normally lives in (BS_BUCKET_NAMES);
+# "Payable against Suppliers" is the one liability-side exception, handled separately below.
+_DUAL_NATURE_BUCKET = {
+    "Cash at Bank": "cash",
+    "Trade Receivable (Local)": "ar", "Trade Receivable (Others)": "ar", "Trade Receivable (Wastage)": "ar",
+    "Inter Company Balance": "otherCA", "Inter Company Interest Balance": "otherCA", "Material Loan Receivable": "otherCA",
+    "Payable against Suppliers": "curLiabOther",
+}
+_DUAL_NATURE_IN = ",".join(f"'{k}'" for k in _DUAL_NATURE_BUCKET)
+
 
 def _bucket_sums(rows: list, keys: tuple) -> dict:
     out = {k: 0.0 for k in keys}
@@ -27,6 +40,33 @@ def _fy_start(d: date) -> date:
     return date(d.year if d.month >= 7 else d.year - 1, 7, 1)
 
 
+def _reclassify_dual_nature(bu: int, as_of: date, a: dict, c: dict) -> None:
+    """Corrects a/c in place for GLs whose net position determines asset-vs-liability
+    side. An overdrawn Cash at Bank (net credit) is really a "Bank Overdraft" liability,
+    not a negative asset; a net-debit Payable against Suppliers is really an "Advance to
+    Suppliers" asset, not a negative liability. Each name's own net decides its side --
+    not the combined bucket's net -- matching fin.sprBalanceSheet's per-GL debit/credit
+    split (it operates on SUM(numAmount) GROUP BY intBusinessUnitId, intGeneralLedgerId)."""
+    rows = run_query(
+        f"""SELECT strGeneralLedgerName name, SUM(numAmount) net
+         FROM fin.tblAccountingJournal
+         WHERE isActive=1 AND intBusinessUnitId=:bu AND dteTransactionDate<=:asof
+         AND strGeneralLedgerName IN ({_DUAL_NATURE_IN})
+         GROUP BY strGeneralLedgerName""",
+        {"bu": bu, "asof": as_of},
+    )
+    for r in rows:
+        name, net = r["name"], float(r["net"] or 0)
+        bucket = _DUAL_NATURE_BUCKET[name]
+        if bucket == "curLiabOther":
+            if net > 0:  # abnormal net-debit Payable against Suppliers -> "Advance to Suppliers" asset
+                c["curLiabOther"] -= net
+                a["otherCA"] += net
+        elif net < 0:  # asset-natured GL gone net-credit -> a liability (e.g. "Bank Overdraft")
+            a[bucket] -= net  # net<0: removes this GL's negative contribution from the asset bucket
+            c["curLiabOther"] += net  # net<0: makes curLiabOther more negative, i.e. current_liab (-curLiabOther) more positive
+
+
 def _bs_snapshot(bu: int, as_of: date) -> dict:
     rows = run_query(
         f"""SELECT {BS_BUCKET_CASE} bucket, SUM(numAmount) amt
@@ -37,6 +77,7 @@ def _bs_snapshot(bu: int, as_of: date) -> dict:
     )
     a = _bucket_sums(rows, _ASSET_BUCKETS)
     c = _bucket_sums(rows, _CREDIT_BUCKETS)
+    _reclassify_dual_nature(bu, as_of, a, c)
     net_fixed = a["fixedAssetGross"] + a["accDep"]  # accDep already negative, nets it down
     current_assets = a["cash"] + a["ar"] + a["inv"] + a["otherCA"] + a["prepaid"]
     total_assets = current_assets + net_fixed + a["investments"] + a["intangibles"]
@@ -239,8 +280,9 @@ def fpa_ratios(co: int = Query(...), from_: date = Query(..., alias="from"), to:
             "Ratio formulas (2.01-2.04, 3.01-3.09) use the ERP's own ratio-engine convention for \"Net Sales\"/\"Net Revenue\" (= Gross Revenue, no sales-tax deduction) and \"COGS\" (= COGS + Manufacturing Overhead) -- confirmed by reproducing the ERP's own printed ratio values exactly. This differs from the Income Statement build-up above (Net Sales Revenue = Gross Revenue - Sales Tax), which is correct as-is and verified against the real P&L report.",
             "Net Credit Sales / Net Credit Purchase are proxied by Gross Revenue / (COGS + Manufacturing Overhead) (no cash-vs-credit flag on transactions).",
             "DSCR and Cash Flow Coverage Ratio proxy \"Principal (and Interest)\" with Financial Expenses (no loan repayment schedule table exists in the DWH).",
-            "EBITDA's \"Other Operating Gain/Loss\" is Sales (Wastage) [doc's \"Operating Income\"] + Freight Income + Agency Income.",
-            "Non Operating Income is Capital Gain + Other Income -- Royalty, Financial Income, Interest Income, Inter Company Interest Income, and Loss/Gain on Asset Disposal have no distinct GL line in the chart of accounts.",
+            "EBITDA's \"Other Operating Gain/Loss\" is Sales (Wastage) [doc's \"Operating Income\"] only -- Freight Income and Agency Income are part of Gross Sales Revenue per fin.tblFinancialStatementComponentConfig, not a separate operating-gain line.",
+            "Non Operating Income is Capital Gain + Other Income + Royalty -- Financial Income, Interest Income, Inter Company Interest Income, and Loss/Gain on Asset Disposal have no distinct GL line in the chart of accounts.",
+            "Cash at Bank / Trade Receivable / Payable against Suppliers / Inter Company balances can flip sides of the balance sheet depending on their net position (e.g. an overdrawn Cash at Bank becomes a liability, a net-debit Payable against Suppliers becomes an asset), matching fin.sprBalanceSheet's debit/credit-split logic.",
             "Operating Cash Flow is derived from balance-sheet deltas (indirect method), not a stored ledger figure.",
         ],
     }
