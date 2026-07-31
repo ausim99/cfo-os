@@ -2,14 +2,15 @@
 # Column logic (PNL_COLS, BAL_COLS, BU_IDS) must stay identical to the embedded
 # snapshot's extraction logic so live and fallback numbers agree.
 
+# Active business units only (dco.tblBusinessUnit.isActive=1). 65 of the original 129
+# ids were flagged inactive in the real ERP -- removed here so both the live queries and
+# the Company/SBU filter (COMPANIES in static/daily_data.js must match this list) stop
+# surfacing units that no longer exist as going concerns. Checked 2026-07-31.
 BU_IDS = [
     250, 232, 245, 238, 247, 235, 220, 4, 221, 240, 249, 256, 243, 246, 144, 253, 138, 224, 244,
-    239, 237, 225, 117, 255, 259, 251, 12, 8, 175, 136, 208, 233, 17, 102, 241, 216, 213, 181, 212,
-    186, 178, 22, 182, 180, 183, 218, 242, 189, 188, 184, 209, 94, 171, 252, 211, 214, 257, 210,
-    258, 248, 234, 219, 260, 133, 98, 91, 236, 122, 20, 6, 9, 103, 13, 261, 222, 97, 223, 53, 2,
-    46, 54, 121, 134, 99, 135, 15, 10, 1, 90, 132, 14, 226, 96, 227, 101, 228, 92, 56, 55, 3, 21,
-    137, 119, 11, 254, 108, 59, 95, 176, 106, 215, 152, 58, 230, 229, 67, 166, 57, 18, 104, 77, 16,
-    81, 82, 80, 83, 107, 105, 127,
+    239, 237, 225, 117, 255, 259, 251, 12, 8, 175, 136, 208, 233, 17, 102, 241, 216, 213, 181,
+    212, 186, 178, 182, 180, 183, 218, 242, 189, 188, 184, 209, 94, 171, 252, 211, 214, 257, 210,
+    258, 248, 234, 260, 236, 261, 254,
 ]
 
 PNL_COLS = """
