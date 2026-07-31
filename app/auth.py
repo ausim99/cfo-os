@@ -2,9 +2,10 @@ import hashlib
 import secrets
 import sqlite3
 from datetime import datetime, timezone
-from pathlib import Path
 
-DB_PATH = Path(__file__).resolve().parent.parent / "data" / "app.db"
+from .paths import base_dir
+
+DB_PATH = base_dir() / "data" / "app.db"
 SESSION_COOKIE = "sid"
 
 

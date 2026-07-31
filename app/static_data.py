@@ -4,9 +4,10 @@ backend and frontend never hold two copies of the same data to keep in sync."""
 import json
 import re
 from functools import lru_cache
-from pathlib import Path
 
-DAILY_DATA_JS = Path(__file__).resolve().parent.parent / "static" / "daily_data.js"
+from .paths import bundle_dir
+
+DAILY_DATA_JS = bundle_dir() / "static" / "daily_data.js"
 
 
 @lru_cache

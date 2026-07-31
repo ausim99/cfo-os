@@ -1,8 +1,10 @@
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
+from .paths import base_dir
+
 
 class Settings(BaseSettings):
-    model_config = SettingsConfigDict(env_file=".env", env_file_encoding="utf-8", extra="ignore")
+    model_config = SettingsConfigDict(env_file=str(base_dir() / ".env"), env_file_encoding="utf-8", extra="ignore")
 
     # --- MSSQL (iBOS ERP / fin.tblAccountingJournalArc) ---
     MSSQL_SERVER: str = ""

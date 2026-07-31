@@ -122,6 +122,14 @@ installed on the machine (not a pip package) -- see
 https://learn.microsoft.com/sql/connect/odbc/download-odbc-driver-for-sql-server.
 Match `MSSQL_DRIVER` in `.env` to whichever version you installed.
 
+## Standalone Windows installer (no Python needed on the target machine)
+
+For distributing this to a machine without Python/git -- a compiled
+`CFOOSServer.exe` plus a proper `CFOOS-Setup.exe` installer (Program Files
+install, auto-start Scheduled Task, desktop shortcuts including one safe to
+hand out to other people on the network -- no credentials in it, just a
+URL). See [docs/Building_The_Installer.md](docs/Building_The_Installer.md).
+
 ## Swapping direct SQL for MCP later
 
 `app/db.py` is the only place that talks to the database. `run_query(sql,

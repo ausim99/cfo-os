@@ -1,13 +1,12 @@
-from pathlib import Path
-
 from fastapi import FastAPI, Request
 from fastapi.responses import FileResponse, JSONResponse, RedirectResponse
 from fastapi.staticfiles import StaticFiles
 
 from . import auth
+from .paths import bundle_dir
 from .routers import admin, auth as auth_router, chat, companies, competitor, email, fpa, health, live, ratios
 
-STATIC_DIR = Path(__file__).resolve().parent.parent / "static"
+STATIC_DIR = bundle_dir() / "static"
 
 app = FastAPI(title="CFO OS")
 auth.init_db()
