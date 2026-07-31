@@ -32,6 +32,7 @@
       <span class="spacer"></span>
       <button class="tb-btn" id="btn-share" title="Share this app">↗ Share</button>
       <a class="tb-btn" id="admin-link" href="/admin" style="display:none">Admin</a>
+      <button class="tb-btn" id="btn-change-pwd" title="Change your password">Change Password</button>
       <button class="tb-btn" id="btn-logout" title="Sign out">Sign out</button>
       <div class="themebar" id="theme-picker" title="Theme">
         <button class="theme-dot" data-theme="light"    style="background:#00a9f4" title="McKinsey Blue"></button>
@@ -60,6 +61,23 @@
   </div>
 </div>
 <div id="panel-backdrop"></div>
+<div id="pwd-modal-backdrop" class="modal-backdrop">
+  <div class="modal-box">
+    <h3>Change Password</h3>
+    <div class="modal-err" id="pwd-err" style="display:none"></div>
+    <div class="modal-ok" id="pwd-ok" style="display:none"></div>
+    <label>Current Password</label>
+    <input type="password" id="pwd-current" autocomplete="current-password">
+    <label>New Password</label>
+    <input type="password" id="pwd-new" autocomplete="new-password" minlength="6">
+    <label>Confirm New Password</label>
+    <input type="password" id="pwd-confirm" autocomplete="new-password" minlength="6">
+    <div class="modal-actions">
+      <button class="tb-btn" id="pwd-cancel">Cancel</button>
+      <button class="tb-btn primary" id="pwd-submit">Update Password</button>
+    </div>
+  </div>
+</div>
 <script src="/static/app.js"></script>
 </body>
 </html>

@@ -110,6 +110,17 @@ body{font-family:var(--f);background:var(--bg);color:var(--ink);overflow:hidden;
 .co-panel label:hover{background:var(--surface2)}
 .co-panel input[type=checkbox]{cursor:pointer}
 #panel-backdrop{display:none;position:fixed;inset:0;background:rgba(0,0,0,.35);z-index:55}
+/* ---------- Generic modal (Change Password, etc.) ---------- */
+.modal-backdrop{display:none;position:fixed;inset:0;background:rgba(0,0,0,.4);z-index:80;align-items:center;justify-content:center}
+.modal-backdrop.show{display:flex}
+.modal-box{background:var(--surface);border-radius:12px;box-shadow:0 12px 40px rgba(0,0,0,.3);padding:20px 22px;width:100%;max-width:340px;margin:16px}
+.modal-box h3{font-size:15px;margin-bottom:14px}
+.modal-box label{display:block;font-size:9.5px;text-transform:uppercase;letter-spacing:1px;color:var(--faint);margin-bottom:4px;margin-top:10px}
+.modal-box input{width:100%;font-family:var(--f);font-size:13px;background:var(--surface2);border:1px solid var(--line2);border-radius:8px;padding:8px 10px;color:var(--ink);outline:none}
+.modal-actions{display:flex;justify-content:flex-end;gap:8px;margin-top:16px}
+.modal-err,.modal-ok{border-radius:7px;padding:8px 10px;font-size:11.5px;margin-bottom:4px}
+.modal-err{background:var(--negbg);color:var(--neg);border:1px solid var(--neg)}
+.modal-ok{background:var(--posbg);color:var(--pos);border:1px solid var(--pos)}
 /* ---------- Content ---------- */
 #content{flex:1;overflow-y:auto;padding:16px 18px 40px}
 #content::-webkit-scrollbar{width:8px}

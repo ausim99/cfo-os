@@ -23,6 +23,7 @@
   .badge{font-size:9.5px;font-weight:700;padding:2px 8px;border-radius:99px;background:#e8eef4;color:#1f4e79}
   .del-btn{font-size:11px;color:#c0392b;background:none;border:1px solid #c0392b;border-radius:6px;padding:3px 9px;cursor:pointer}
   .del-btn:disabled{opacity:.4;cursor:default}
+  .reset-btn{font-size:11px;color:#1f4e79;background:none;border:1px solid #1f4e79;border-radius:6px;padding:3px 9px;cursor:pointer;margin-right:6px}
   form{display:flex;gap:10px;flex-wrap:wrap;align-items:flex-end}
   .fld{display:flex;flex-direction:column;gap:4px}
   .fld label{font-size:9.5px;text-transform:uppercase;letter-spacing:1px;color:#9aa7b8}
@@ -78,7 +79,10 @@ async function loadUsers() {
       <td>${u.username}</td>
       <td>${u.is_admin ? '<span class="badge">Admin</span>' : 'User'}</td>
       <td>${new Date(u.created_at).toLocaleString()}</td>
-      <td><button class="del-btn" data-id="${u.id}" ${u.username === "admin" ? "disabled" : ""}>Remove</button></td>
+      <td>
+        <button class="reset-btn" data-id="${u.id}" data-username="${u.username}">Reset Password</button>
+        <button class="del-btn" data-id="${u.id}" ${u.username === "admin" ? "disabled" : ""}>Remove</button>
+      </td>
     </tr>
   `).join("");
 }
@@ -102,11 +106,24 @@ document.getElementById("add-form").addEventListener("submit", async (e) => {
 });
 
 document.getElementById("users-body").addEventListener("click", async (e) => {
-  const btn = e.target.closest(".del-btn");
-  if (!btn || btn.disabled) return;
-  if (!confirm("Remove this user?")) return;
-  await api("/api/admin/users/" + btn.dataset.id, {method: "DELETE"});
-  loadUsers();
+  const delBtn = e.target.closest(".del-btn");
+  if (delBtn && !delBtn.disabled) {
+    if (!confirm("Remove this user?")) return;
+    await api("/api/admin/users/" + delBtn.dataset.id, {method: "DELETE"});
+    loadUsers();
+    return;
+  }
+  const resetBtn = e.target.closest(".reset-btn");
+  if (resetBtn) {
+    const newPassword = prompt("New password for " + resetBtn.dataset.username + " (min 6 characters):");
+    if (!newPassword) return;
+    try {
+      await api("/api/admin/users/" + resetBtn.dataset.id + "/reset-password", {method: "POST", body: JSON.stringify({new_password: newPassword})});
+      alert("Password updated for " + resetBtn.dataset.username + ".");
+    } catch (ex) {
+      alert(ex.message);
+    }
+  }
 });
 
 document.getElementById("logout-link").addEventListener("click", async (e) => {

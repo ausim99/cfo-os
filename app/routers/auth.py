@@ -33,3 +33,18 @@ def me(request: Request):
     if not user:
         return JSONResponse({"error": "unauthorized"}, status_code=401)
     return {"username": user["username"], "is_admin": bool(user["is_admin"])}
+
+
+@router.post("/change-password")
+def change_password(payload: dict, request: Request):
+    user = auth.user_from_request(request)
+    if not user:
+        return JSONResponse({"error": "unauthorized"}, status_code=401)
+    current = payload.get("current_password") or ""
+    new = payload.get("new_password") or ""
+    if not auth.verify_user(user["username"], current):
+        return JSONResponse({"error": "current password is incorrect"}, status_code=400)
+    if len(new) < 6:
+        return JSONResponse({"error": "new password must be at least 6 characters"}, status_code=400)
+    auth.set_password(user["username"], new)
+    return {"ok": True}

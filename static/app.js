@@ -2124,3 +2124,28 @@ document.getElementById("btn-logout").onclick=async()=>{
  await fetch("/api/auth/logout",{method:"POST"});
  location.href="/";
 };
+
+(function(){
+ const backdrop=document.getElementById("pwd-modal-backdrop");
+ const err=document.getElementById("pwd-err"), ok=document.getElementById("pwd-ok");
+ const cur=document.getElementById("pwd-current"), nw=document.getElementById("pwd-new"), cf=document.getElementById("pwd-confirm");
+ function reset(){err.style.display="none";ok.style.display="none";cur.value="";nw.value="";cf.value="";}
+ function close(){backdrop.classList.remove("show");reset();}
+ document.getElementById("btn-change-pwd").onclick=()=>{reset();backdrop.classList.add("show");cur.focus();};
+ document.getElementById("pwd-cancel").onclick=close;
+ backdrop.addEventListener("click",e=>{if(e.target===backdrop)close();});
+ document.getElementById("pwd-submit").onclick=async()=>{
+  err.style.display="none";ok.style.display="none";
+  if(nw.value.length<6){err.textContent="New password must be at least 6 characters.";err.style.display="block";return;}
+  if(nw.value!==cf.value){err.textContent="New password and confirmation don't match.";err.style.display="block";return;}
+  try{
+   const res=await fetch("/api/auth/change-password",{method:"POST",headers:{"Content-Type":"application/json"},
+    body:JSON.stringify({current_password:cur.value,new_password:nw.value})});
+   const data=await res.json();
+   if(!res.ok)throw new Error(data.error||"Failed to update password");
+   ok.textContent="Password updated.";ok.style.display="block";
+   cur.value="";nw.value="";cf.value="";
+   setTimeout(close,1200);
+  }catch(ex){err.textContent=ex.message;err.style.display="block";}
+ };
+})();

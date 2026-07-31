@@ -46,6 +46,22 @@ def add_user(payload: dict, request: Request):
     return {"ok": True}
 
 
+@router.post("/users/{user_id}/reset-password")
+def reset_password(user_id: int, payload: dict, request: Request):
+    if not _require_admin(request):
+        return JSONResponse({"error": "forbidden"}, status_code=403)
+    new_password = payload.get("new_password") or ""
+    if len(new_password) < 6:
+        return JSONResponse({"error": "password must be at least 6 characters"}, status_code=400)
+    conn = auth.get_conn()
+    row = conn.execute("SELECT username FROM users WHERE id=?", (user_id,)).fetchone()
+    conn.close()
+    if not row:
+        return JSONResponse({"error": "user not found"}, status_code=404)
+    auth.set_password(row["username"], new_password)
+    return {"ok": True}
+
+
 @router.delete("/users/{user_id}")
 def delete_user(user_id: int, request: Request):
     if not _require_admin(request):

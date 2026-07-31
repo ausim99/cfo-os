@@ -91,6 +91,14 @@ def get_session_user(token: str | None) -> sqlite3.Row | None:
     return row
 
 
+def set_password(username: str, new_password: str) -> None:
+    pw_hash, salt = hash_password(new_password)
+    conn = get_conn()
+    conn.execute("UPDATE users SET password_hash=?, salt=? WHERE username=?", (pw_hash, salt, username))
+    conn.commit()
+    conn.close()
+
+
 def delete_session(token: str) -> None:
     conn = get_conn()
     conn.execute("DELETE FROM sessions WHERE token=?", (token,))
